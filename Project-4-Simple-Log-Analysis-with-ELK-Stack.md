@@ -3,7 +3,8 @@
 ## Overview
 This module demonstrates the deployment of a centralized logging architecture using the **ELK Stack** (Elasticsearch, Logstash, Kibana). The objective is to ingest raw system logs, parse them into structured JSON, and visualize threat data for real-time monitoring.
 
-[Image of ELK stack architecture diagram]
+<img width="371" height="136" alt="image" src="https://github.com/user-attachments/assets/205f36d4-a6ad-4f10-b125-ed2941027b5b" />
+
 
 ## Environment & Prerequisites
 - **Host System:** Ubuntu 20.04 LTS (4GB+ RAM recommended)
