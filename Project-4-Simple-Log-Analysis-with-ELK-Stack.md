@@ -3,7 +3,6 @@
 ## Overview
 This module demonstrates the deployment of a centralized logging architecture using the **ELK Stack** (Elasticsearch, Logstash, Kibana). The objective is to ingest raw system logs, parse them into structured JSON, and visualize threat data for real-time monitoring.
 
-<img width="371" height="136" alt="image" src="https://github.com/user-attachments/assets/205f36d4-a6ad-4f10-b125-ed2941027b5b" />
 
 
 ## Environment & Prerequisites
@@ -65,3 +64,27 @@ Configure the ingestion pipeline to normalize log data before indexing.
 
 3.  **Pipeline Execution:**
     ```bash
+    sudo systemctl restart logstash
+    ```
+
+### Phase 3: Visualization & Dashboards (Kibana)
+Deploy the frontend interface for threat hunting and data visualization.
+
+
+
+1.  **Install Kibana:**
+    ```bash
+    sudo apt-get install kibana
+    sudo systemctl enable --now kibana
+    ```
+
+2.  **Dashboard Configuration:**
+    * **Access:** Navigate to `http://localhost:5601`.
+    * **Index Pattern:** Create a pattern for `security-logs-*` to link the Elasticsearch indices.
+    * **Visualizations:**
+        * *Vertical Bar:* Top 10 Failed SSH Logins (Source IP).
+        * *Pie Chart:* Sudo Usage Distribution by User.
+        * *Line Graph:* Log Volume over Time (Anomaly Detection).
+
+## Outcome
+This deployment establishes a functional SIEM-like capability, allowing for the correlation of disparate log events and the visual identification of security anomalies.
