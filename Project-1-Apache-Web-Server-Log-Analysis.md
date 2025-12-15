@@ -1,103 +1,85 @@
-# Project 1: Basic Apache Web Server Log Analysis
+# Apache Web Server Log Forensics & Anomaly Detection
 
-## Introduction
-In this project, students will learn the fundamentals of log analysis by working with Apache web server logs. Apache logs are a rich source of information about web traffic and can help identify potential security incidents, usage patterns, and performance issues. By the end of this project, students will be able to extract and interpret valuable information from Apache access and error logs.
+## Overview
+This module focuses on the manual and automated analysis of Apache Web Server logs (`access.log` and `error.log`). The objective is to identify Indicators of Compromise (IOCs), such as unauthorized access attempts, scanning activity, and denial-of-service precursors.
 
-## Pre-requisites
-- Basic understanding of web servers and HTTP protocols
-- Familiarity with Linux command line
-- Apache web server installed (can be on a local machine or a VM)
+## Environment & Prerequisites
+- **Target System:** Ubuntu Server 22.04 LTS (Apache2 Service)
+- **Log Location:** `/var/log/apache2/`
+- **Tools:** Bash, AWK, Grep, Python 3.x
 
-## Lab Set-up and Tools
-- Ubuntu 22.04 or later (or any Linux distribution with Apache installed)
-- Apache web server installed and running
-- Access to Apache log files (typically located in `/var/log/apache2/`)
+## Forensic Analysis Workflow
 
-## Exercises
+### Phase 1: Data Acquisition & Structure Review
 
-### Exercise 1: Accessing Apache Log Files
+Before automated parsing, analysts must verify log integrity and structure.
 
-**Steps:**
-
-1. Open a terminal on your Linux machine.
-2. Navigate to the Apache log directory:
+1. **Navigate to Log Directory:**
     ```bash
     cd /var/log/apache2/
+    ls -lh
     ```
-3. List the log files to understand the available logs:
+
+2. **Log Structure Validation:**
+    Use `head` or `less` to inspect the latest entries and verify the Common Log Format (CLF).
     ```bash
-    ls -l
+    head -n 20 access.log
     ```
+    *Key Data Points Identified:* Source IP, Timestamp, HTTP Method (GET/POST), Resource Path, HTTP Status Code, User Agent.
 
-**Expected Output:**
-- A list of Apache log files such as `access.log` and `error.log`.
+### Phase 2: Threat Hunting & IOC Filtering
 
-### Exercise 2: Understanding Access Logs
+This phase involves isolating specific traffic patterns indicative of reconnaissance or attacks.
 
-**Steps:**
-
-1. Open the access log file using `less` or `cat`:
-    ```bash
-    less access.log
-    ```
-2. Observe the format of the log entries, which typically include information such as IP address, request timestamp, request method, URL, HTTP status code, and user agent.
-3. Identify a few entries and break down their components.
-
-**Expected Output:**
-- Understanding of the structure of access log entries, including IP addresses, timestamps, request methods, URLs, status codes, and user agents.
-
-### Exercise 3: Filtering Log Entries
-
-**Steps:**
-
-1. Use the `grep` command to filter log entries based on specific criteria, such as a particular IP address:
+1. **Targeted IP Investigation:**
+    Isolate traffic from suspicious IP addresses identified by the NIDS or firewall.
     ```bash
     grep '192.168.1.100' access.log
     ```
-2. Filter log entries by HTTP status code (e.g., 404 errors):
+
+2. **Scanning Activity Detection (404 Floods):**
+    Filter for high volumes of `404 Not Found` errors, which often indicate directory enumeration tools (e.g., Dirbuster, Gobuster).
     ```bash
-    grep ' 404 ' access.log
+    grep ' 404 ' access.log | head -n 20
     ```
-3. Combine filters to extract more specific information, such as 404 errors from a specific IP address:
+
+3. **Complex Correlation:**
+    Correlate a specific Source IP with error codes to confirm an active scan against that target.
     ```bash
     grep '192.168.1.100' access.log | grep ' 404 '
     ```
 
-**Expected Output:**
-- A filtered list of log entries matching the specified criteria, demonstrating how to extract specific information from log files.
+### Phase 3: Error Log Auditing
 
-### Exercise 4: Analyzing Error Logs
+Analyze `error.log` for system-level failures or script exploits.
 
-**Steps:**
-
-1. Open the error log file using `less` or `cat`:
+1. **Review Critical Errors:**
     ```bash
-    less error.log
+    cat error.log | grep -i "error" | tail -n 50
     ```
-2. Identify different types of errors, such as file not found errors, script errors, or permission issues.
-3. Note the timestamps and frequency of errors to understand patterns or recurring issues.
+    *Focus Areas:* Permission denied errors, PHP script failures, and potential SQL injection warnings logged by the server.
 
-**Expected Output:**
-- Insight into the types of errors logged in the error log, including their causes and frequency.
+### Phase 4: Statistical Anomaly Detection (Bash Profiling)
 
-### Exercise 5: Summarizing Log Data
+Use `awk` for quick statistical baselining of traffic to identify outliers.
 
-**Steps:**
-
-1. Use the `awk` command to summarize log data, such as counting the number of requests from each IP address:
+1. **Top Talkers (Source IP Volume):**
+    Identifies potential DoS sources or heavy scrapers.
     ```bash
-    awk '{print $1}' access.log | sort | uniq -c | sort -nr
+    awk '{print $1}' access.log | sort | uniq -c | sort -nr | head -n 10
     ```
-2. Summarize the number of requests per day:
+
+2. **Traffic Frequency Analysis:**
+    Break down request volume by timestamp/day to spot spikes in traffic.
     ```bash
     awk '{print $4}' access.log | cut -d: -f1 | sort | uniq -c
     ```
-3. Identify the most requested URLs:
+
+3. **Resource Targeting:**
+    Identify the most frequently accessed endpoints to detect "login" page brute-forcing.
     ```bash
-    awk '{print $7}' access.log | sort | uniq -c | sort -nr
+    awk '{print $7}' access.log | sort | uniq -c | sort -nr | head -n 10
     ```
 
-**Expected Output:**
-- Summarized log data showing the number of requests per IP address, the number of requests per day, and the most requested URLs.
-
-By completing these exercises, students will gain hands-on experience in accessing, filtering, and analyzing Apache web server logs, which are essential skills for identifying security incidents, understanding web traffic patterns, and troubleshooting issues.
+## Outcome
+This workflow provides a rapid triage capability for web server incidents, allowing the security team to quickly isolate malicious IPs and understand attack vectors before deploying full-scale remediation.
